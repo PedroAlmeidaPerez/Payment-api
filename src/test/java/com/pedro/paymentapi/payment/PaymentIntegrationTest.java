@@ -70,4 +70,11 @@ class PaymentIntegrationTest {
                 .andExpect(jsonPath("$.description", is("test")))
                 .andExpect(jsonPath("$.status", is("CREATED")));
     }
+
+    @Test
+    void getPayment_notFound_returns404() throws Exception {
+        mockMvc.perform(get("/payments/{id}", 9999))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status", is(404)));
+    }
 }

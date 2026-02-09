@@ -3,6 +3,7 @@ package com.pedro.paymentapi.payment;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import com.pedro.paymentapi.payment.error.NotFoundException;
 
 import java.time.Instant;
 
@@ -33,7 +34,7 @@ public class PaymentService {
 
     public Payment getById(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Payment not found: " + id));
+                .orElseThrow(() -> new NotFoundException("Payment not found: " + id));
     }
 
 
