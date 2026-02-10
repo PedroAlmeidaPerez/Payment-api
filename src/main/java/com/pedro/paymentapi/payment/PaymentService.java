@@ -3,7 +3,7 @@ package com.pedro.paymentapi.payment;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import com.pedro.paymentapi.payment.error.NotFoundException;
+import com.pedro.paymentapi.error.NotFoundException;
 
 import java.time.Instant;
 

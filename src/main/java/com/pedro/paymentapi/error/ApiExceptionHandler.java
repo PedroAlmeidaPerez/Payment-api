@@ -1,4 +1,4 @@
-package com.pedro.paymentapi.payment.error;
+package com.pedro.paymentapi.error;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -29,7 +29,7 @@ public class ApiExceptionHandler {
 
         Map<String, Object> body = new HashMap<>();
         body.put("status", 400);
-        body.put("error", "Bad Request");
+        body.put("error", "Request validation error");
         body.put("fields", fieldErrors);
         return body;
     }
