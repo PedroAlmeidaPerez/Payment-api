@@ -1,4 +1,4 @@
-package com.pedro.paymentapi.payment.error;
+package com.pedro.paymentapi.error;
 
 public class NotFoundException extends RuntimeException {
     public NotFoundException(String message) {

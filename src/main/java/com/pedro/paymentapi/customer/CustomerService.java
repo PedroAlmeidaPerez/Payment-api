@@ -1,9 +1,7 @@
 package com.pedro.paymentapi.customer;
 
 import com.pedro.paymentapi.customer.dto.CreateCustomerRequest;
-import com.pedro.paymentapi.payment.Payment;
-import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
-import com.pedro.paymentapi.payment.error.NotFoundException;
+import com.pedro.paymentapi.error.NotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
