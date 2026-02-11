@@ -1,5 +1,8 @@
 package com.pedro.paymentapi.payment;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.pedro.paymentapi.customer.Customer;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -28,6 +31,11 @@ public class Payment {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    @JsonIgnore // evita bucle JSON (Payment -> Customer -> Payments -> ...)
+    private Customer customer;
+
     public Payment() {}
 
     public Long getId() { return id; }
@@ -47,4 +55,13 @@ public class Payment {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
 }

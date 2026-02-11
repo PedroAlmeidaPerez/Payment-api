@@ -16,12 +16,6 @@ public class PaymentController {
         this.service = service;
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Payment create(@Valid @RequestBody CreatePaymentRequest request) {
-        return service.create(request);
-    }
-
     @GetMapping("/{id}")
     public Payment get(@PathVariable Long id) {
         return service.getById(id);
