@@ -13,16 +13,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class PaymentIntegrationTest {
+class CustomerPaymentsIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    private long createCustomerAndReturnId() throws Exception {
+        String email = "pedro_test_" + System.nanoTime() + "@hotmail.com";
+        String customerBody = "{\"email\":\"" + email + "\",\"fullName\":\"Pedro Test\"}";
+
+        String response = mockMvc.perform(post("/customers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(customerBody))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return Long.parseLong(response.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
+    }
+
     @Test
-    void createPayment_returns201_andPersists() throws Exception {
+    void createPaymentForCustomer_returns201() throws Exception {
+        long customerId = createCustomerAndReturnId();
         String body = "{\"amount\":9999.50,\"currency\":\"EUR\",\"description\":\"hola\"}";
 
-        mockMvc.perform(post("/payments")
+        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -37,43 +53,49 @@ class PaymentIntegrationTest {
 
     @Test
     void createPayment_invalidBody_returns400() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
         // amount too small + currency wrong length
         String body = "{\"amount\":0,\"currency\":\"E\"}";
 
-        mockMvc.perform(post("/payments")
+        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is(400)))
+                .andExpect(jsonPath("$.error", notNullValue()))
+                .andExpect(jsonPath("$.fields", notNullValue()));
     }
 
     @Test
-    void createThenGet_returnsSamePayment() throws Exception {
+    void listPayments_afterCreate_containsCreatedPayment() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
         String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"test\"}";
 
-        String response = mockMvc.perform(post("/payments")
+        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .andExpect(status().isCreated());
 
-        // Extraer id sin librerías extra (simple)
-        // response contiene: ..."id":1,...
-        long id = Long.parseLong(response.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
-
-        mockMvc.perform(get("/payments/{id}", id))
+        mockMvc.perform(get("/customers/{customerId}/payments", customerId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is((int) id)))
-                .andExpect(jsonPath("$.amount", is(10.00)))
-                .andExpect(jsonPath("$.currency", is("EUR")))
-                .andExpect(jsonPath("$.description", is("test")))
-                .andExpect(jsonPath("$.status", is("CREATED")));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", isA(java.util.List.class)))
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$[0].amount", is(10.00)))
+                .andExpect(jsonPath("$[0].currency", is("EUR")))
+                .andExpect(jsonPath("$[0].description", is("test")))
+                .andExpect(jsonPath("$[0].status", is("CREATED")));
     }
 
     @Test
-    void getPayment_notFound_returns404() throws Exception {
-        mockMvc.perform(get("/payments/{id}", 9999))
+    void createPayment_missingCustomer_returns404() throws Exception {
+        String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"test\"}";
+
+        mockMvc.perform(post("/customers/{customerId}/payments", 999999)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status", is(404)));
     }

@@ -1,7 +1,11 @@
 package com.pedro.paymentapi.customer;
 
+import com.pedro.paymentapi.payment.Payment;
+
 import javax.persistence.*;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "customer")
@@ -18,6 +22,17 @@ public class Customer {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    public List<Payment> getPayments() {
+        return payments;
+    }
+
+    public void setPayments(List<Payment> payments) {
+        this.payments = payments;
+    }
+
+    @OneToMany(mappedBy = "customer")
+    private List<Payment> payments = new ArrayList<>();
 
     public Customer() {
     }
