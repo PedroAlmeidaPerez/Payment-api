@@ -52,6 +52,56 @@ class CustomerPaymentsIntegrationTest {
     }
 
     @Test
+    void payment_canBeConfirmed_fromCreated()throws Exception {
+        long customerId = createCustomerAndReturnId();
+        String body = "{\"amount\":10.50,\"currency\":\"EUR\",\"description\":\"description2\"}";
+        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        long paymentId = Long.parseLong(
+                paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
+        );
+
+        mockMvc.perform(post("/payments/{customerId}/confirm", paymentId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andExpect(jsonPath("$.status", is("CONFIRMED")));
+
+
+
+    }
+
+    @Test
+    void payment_canBeCanceled_fromCreated()throws Exception {
+        long customerId = createCustomerAndReturnId();
+        String body = "{\"amount\":10.50,\"currency\":\"EUR\",\"description\":\"description2\"}";
+        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        long paymentId = Long.parseLong(
+                paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
+        );
+
+        mockMvc.perform(post("/payments/{customerId}/cancel", paymentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+
+
+
+    }
+
+    @Test
     void createPayment_invalidBody_returns400() throws Exception {
         long customerId = createCustomerAndReturnId();
 

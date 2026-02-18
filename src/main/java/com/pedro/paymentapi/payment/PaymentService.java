@@ -4,6 +4,7 @@ import com.pedro.paymentapi.customer.Customer;
 import com.pedro.paymentapi.customer.CustomerService;
 import com.pedro.paymentapi.error.NotFoundException;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
+import com.pedro.paymentapi.error.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -55,5 +56,35 @@ public class PaymentService {
         // ✅ Si el customer no existe, devolvemos 404 (no [])
         customerService.getById(customerId);
         return paymentRepository.findByCustomerId(customerId);
+    }
+
+    private Payment findPaymentById(Long paymentId) {
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new NotFoundException("Payment not found: " + paymentId));
+    }
+
+    @Transactional
+    public Payment confirm (Long paymentId) {
+        Payment payment = findPaymentById(paymentId);
+        if (payment.getStatus() != PaymentStatus.CREATED) {
+            throw new BadRequestException("Cannot confirm payment in status: " + payment.getStatus());
+        }
+        payment.setStatus(PaymentStatus.CONFIRMED);
+
+        return paymentRepository.save(payment);
+    }
+
+    @Transactional
+    public Payment cancel (Long paymentId) {
+        Payment payment = findPaymentById(paymentId);
+        if (payment.getStatus() != PaymentStatus.CREATED) {
+
+                throw new BadRequestException("Cannot cancel payment in status: " + payment.getStatus());
+
+        }
+        payment.setStatus(PaymentStatus.CANCELLED);
+
+        return paymentRepository.save(payment);
+
     }
 }
