@@ -21,4 +21,16 @@ public class PaymentController {
         return service.getById(id);
     }
 
+    @PostMapping("/{id}/confirm")
+    @ResponseStatus(HttpStatus.OK)
+    public Payment confirm(@PathVariable Long id) {
+        return service.confirm(id);
+    }
+
+    @PostMapping("/{id}/cancel")
+    @ResponseStatus(HttpStatus.OK)
+    public Payment cancel(@PathVariable Long id) {
+        return service.cancel(id);
+    }
+
 }

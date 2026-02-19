@@ -33,4 +33,15 @@ public class ApiExceptionHandler {
         body.put("fields", fieldErrors);
         return body;
     }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(BadRequestException.class)
+    public Map<String, Object> badRequest(BadRequestException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", 400);
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
+        return body;
+    }
+
 }
