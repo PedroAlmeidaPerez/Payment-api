@@ -67,9 +67,7 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{customerId}/confirm", paymentId)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
+        mockMvc.perform(post("/payments/{customerId}/confirm", paymentId))
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
 
@@ -92,14 +90,66 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{customerId}/cancel", paymentId)
+        mockMvc.perform(post("/payments/{customerId}/cancel", paymentId))
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+    }
+
+    @Test
+    void payment_canNotBeCanceled_fromConfirmed() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
+        String body = "{\"amount\":12.50,\"currency\":\"EUR\",\"description\":\"description3\"}";
+
+        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        long paymentId = Long.parseLong(paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
+
+        // Confirmar
+        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CONFIRMED")));
+
+        // Intentar cancelar (debe fallar)
+        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is(400)))
+                .andExpect(jsonPath("$.error", notNullValue()));
+    }
+
+    @Test
+    void payment_canNotBeConfirmed_fromCancelled() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
+        String body = "{\"amount\":15.50,\"currency\":\"EUR\",\"description\":\"description4\"}";
+
+        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        long paymentId = Long.parseLong(paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
+
+        // Confirmar
+        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
 
-
-
+        // Intentar cancelar (debe fallar)
+        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is(400)))
+                .andExpect(jsonPath("$.error", notNullValue()));
     }
+
 
     @Test
     void createPayment_invalidBody_returns400() throws Exception {
