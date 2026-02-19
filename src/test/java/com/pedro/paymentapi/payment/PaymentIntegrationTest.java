@@ -67,7 +67,8 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{customerId}/confirm", paymentId))
+        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
 
@@ -90,7 +91,8 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{customerId}/cancel", paymentId))
+        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
     }
 
