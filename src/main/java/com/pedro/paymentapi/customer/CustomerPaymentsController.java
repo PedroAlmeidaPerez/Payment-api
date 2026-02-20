@@ -4,6 +4,7 @@ import com.pedro.paymentapi.payment.PaymentMapper;
 import com.pedro.paymentapi.payment.PaymentService;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import com.pedro.paymentapi.payment.dto.PaymentResponse;
+import com.pedro.paymentapi.payment.dto.PaymentSummaryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +35,11 @@ public class CustomerPaymentsController {
         return paymentService.listByCustomer(customerId).stream()
                 .map(paymentMapper::toResponse)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @RequestMapping("/summary")
+    public PaymentSummaryResponse summary(@PathVariable Long customerId) {
+        return paymentService.getSummaryByCustomer(customerId);
     }
 }
 

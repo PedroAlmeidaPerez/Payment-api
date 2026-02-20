@@ -7,6 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -200,5 +202,48 @@ class CustomerPaymentsIntegrationTest {
                         .content(body))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status", is(404)));
+    }
+
+    @Test
+    void summary_withMultiplePayments_returnsAggregatedData() throws  Exception {
+        long customerId = createCustomerAndReturnId();
+
+        String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"test\"}";
+        String body2 = "{\"amount\":11.00,\"currency\":\"EUR\",\"description\":\"test1\"}";
+        String body3 = "{\"amount\":12.00,\"currency\":\"EUR\",\"description\":\"test2\"}";
+
+        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body2))
+                .andExpect(status().isCreated());
+
+
+        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body3))
+                .andExpect(status().isCreated())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        long paymentId = Long.parseLong(
+                paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
+        );
+
+        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CANCELLED")));
+
+        mockMvc.perform(get("/customers/{customerId}/payments/summary", customerId))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isMap())
+                //.andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.totalAmount").value(33.00));
     }
 }
