@@ -5,13 +5,16 @@ import com.pedro.paymentapi.customer.CustomerService;
 import com.pedro.paymentapi.error.NotFoundException;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import com.pedro.paymentapi.error.BadRequestException;
+import com.pedro.paymentapi.payment.dto.PaymentSummaryResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PaymentService {
@@ -86,5 +89,30 @@ public class PaymentService {
 
         return paymentRepository.save(payment);
 
+    }
+
+
+    public PaymentSummaryResponse getSummaryByCustomer (Long customerId) {
+        List<Payment> listPayments = listByCustomer(customerId);
+
+        int totalCount = listPayments.size();
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (Payment p: listPayments) {
+            if (p.getAmount() != null) {
+                totalAmount = totalAmount.add(p.getAmount());
+            }
+        }
+
+        Map<PaymentStatus, Long> byStatus = new EnumMap<>(PaymentStatus.class);
+        for (Payment p : listPayments) {
+            if (p.getStatus() != null) {
+                byStatus.put(p.getStatus(), byStatus.getOrDefault(p.getStatus(), 0L) + 1L);
+            }
+        }
+
+        String customer = customerService.getById(customerId).getFullName();
+
+        return new PaymentSummaryResponse(customerId, customer, totalCount, totalAmount, byStatus);
     }
 }
