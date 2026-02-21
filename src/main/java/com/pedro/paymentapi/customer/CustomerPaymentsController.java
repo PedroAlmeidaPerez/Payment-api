@@ -2,9 +2,13 @@ package com.pedro.paymentapi.customer;
 import com.pedro.paymentapi.payment.Payment;
 import com.pedro.paymentapi.payment.PaymentMapper;
 import com.pedro.paymentapi.payment.PaymentService;
+import com.pedro.paymentapi.payment.PaymentStatus;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import com.pedro.paymentapi.payment.dto.PaymentResponse;
 import com.pedro.paymentapi.payment.dto.PaymentSummaryResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,10 +35,13 @@ public class CustomerPaymentsController {
     }
 
     @GetMapping
-    public List<PaymentResponse> list(@PathVariable Long customerId) {
-        return paymentService.listByCustomer(customerId).stream()
-                .map(paymentMapper::toResponse)
-                .collect(java.util.stream.Collectors.toList());
+    public Page<PaymentResponse> list(
+            @PathVariable Long customerId,
+            @RequestParam(required = false) PaymentStatus status,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+    ) {
+        return paymentService.listByCustomer(customerId, status, pageable)
+                .map(paymentMapper::toResponse);
     }
 
     @RequestMapping("/summary")
