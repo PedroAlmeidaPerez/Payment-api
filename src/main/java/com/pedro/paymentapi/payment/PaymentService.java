@@ -6,6 +6,8 @@ import com.pedro.paymentapi.error.NotFoundException;
 import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
 import com.pedro.paymentapi.error.BadRequestException;
 import com.pedro.paymentapi.payment.dto.PaymentSummaryResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -55,10 +57,13 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public List<Payment> listByCustomer(Long customerId) {
+    public Page<Payment> listByCustomer(Long customerId, PaymentStatus status, Pageable pageable) {
         // ✅ Si el customer no existe, devolvemos 404 (no [])
         customerService.getById(customerId);
-        return paymentRepository.findByCustomerId(customerId);
+        if (status == null) {
+            return paymentRepository.findByCustomerId(customerId, pageable);
+        }
+        return paymentRepository.findByCustomerIdAndStatus(customerId, status, pageable);
     }
 
     private Payment findPaymentById(Long paymentId) {
@@ -93,7 +98,8 @@ public class PaymentService {
 
 
     public PaymentSummaryResponse getSummaryByCustomer (Long customerId) {
-        List<Payment> listPayments = listByCustomer(customerId);
+        Customer c = customerService.getById(customerId); // 404 si no existe
+        List<Payment> listPayments = paymentRepository.findByCustomerId(customerId);
 
         int totalCount = listPayments.size();
 
@@ -111,8 +117,8 @@ public class PaymentService {
             }
         }
 
-        String customer = customerService.getById(customerId).getFullName();
+        //String customer = customerService.getById(customerId).getFullName();
 
-        return new PaymentSummaryResponse(customerId, customer, totalCount, totalAmount, byStatus);
+        return new PaymentSummaryResponse(customerId, c.getFullName(), totalCount, totalAmount, byStatus);
     }
 }

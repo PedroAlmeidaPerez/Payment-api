@@ -185,12 +185,12 @@ class CustomerPaymentsIntegrationTest {
         mockMvc.perform(get("/customers/{customerId}/payments", customerId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", isA(java.util.List.class)))
-                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
-                .andExpect(jsonPath("$[0].amount", is(10.00)))
-                .andExpect(jsonPath("$[0].currency", is("EUR")))
-                .andExpect(jsonPath("$[0].description", is("test")))
-                .andExpect(jsonPath("$[0].status", is("CREATED")));
+                .andExpect(jsonPath("$.content", isA(java.util.List.class)))
+                .andExpect(jsonPath("$.content", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.content[0].amount", is(10.00)))
+                .andExpect(jsonPath("$.content[0].currency", is("EUR")))
+                .andExpect(jsonPath("$.content[0].description", is("test")))
+                .andExpect(jsonPath("$.content[0].status", is("CREATED")));
     }
 
     @Test
@@ -245,5 +245,65 @@ class CustomerPaymentsIntegrationTest {
                 .andExpect(jsonPath("$").isMap())
                 //.andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
                 .andExpect(jsonPath("$.totalAmount").value(33.00));
+    }
+
+    @Test
+    void listPayments_filterByStatus_returnsOnlyConfirmed() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
+        String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"a\"}";
+
+        // Crear 2 pagos
+        String p1 = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        String p2 = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        long id1 = Long.parseLong(p1.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
+
+        // Confirmar solo uno
+        mockMvc.perform(post("/payments/{id}/confirm", id1))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("CONFIRMED")));
+
+        // Filtrar por CONFIRMED
+        mockMvc.perform(get("/customers/{customerId}/payments", customerId)
+                        .param("status", "CONFIRMED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].id", is((int) id1)))
+                .andExpect(jsonPath("$.content[0].status", is("CONFIRMED")));
+    }
+
+    @Test
+    void listPayments_pagination_returnsPage() throws Exception {
+        long customerId = createCustomerAndReturnId();
+
+        String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"a\"}";
+
+        // Crear 3 pagos
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/customers/{customerId}/payments", customerId)
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sort", "createdAt,desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.totalElements", is(greaterThanOrEqualTo(3))))
+                .andExpect(jsonPath("$.size", is(2)))
+                .andExpect(jsonPath("$.number", is(0)));
     }
 }
