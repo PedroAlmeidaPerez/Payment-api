@@ -19,12 +19,13 @@ class CustomerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+    private static final String API = com.pedro.paymentapi.ApiPaths.V;
 
     @Test
     void createCustomer_returns201_andPersists() throws Exception {
         String body = "{\"email\":\"paco@hotmail.com\",\"fullName\":\"Pedro A P\"}";
 
-        mockMvc.perform(post("/customers")
+        mockMvc.perform(post(API + "/customers")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isCreated())
@@ -38,7 +39,7 @@ class CustomerIntegrationTest {
 
     @Test
     void getCustomer_notFound_returns404() throws Exception {
-        mockMvc.perform(get("/customers/{id}", 999))
+        mockMvc.perform(get(API + "/customers/{id}", 999))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status", is(404)));
     }

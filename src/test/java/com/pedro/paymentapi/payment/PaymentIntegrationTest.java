@@ -7,8 +7,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -20,11 +18,13 @@ class CustomerPaymentsIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private static final String API = com.pedro.paymentapi.ApiPaths.V;
+
     private long createCustomerAndReturnId() throws Exception {
         String email = "pedro_test_" + System.nanoTime() + "@hotmail.com";
         String customerBody = "{\"email\":\"" + email + "\",\"fullName\":\"Pedro Test\"}";
 
-        String response = mockMvc.perform(post("/customers")
+        String response = mockMvc.perform(post(API + "/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(customerBody))
                 .andExpect(status().isCreated())
@@ -40,7 +40,7 @@ class CustomerPaymentsIntegrationTest {
         long customerId = createCustomerAndReturnId();
         String body = "{\"amount\":9999.50,\"currency\":\"EUR\",\"description\":\"hola\"}";
 
-        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -57,7 +57,7 @@ class CustomerPaymentsIntegrationTest {
     void payment_canBeConfirmed_fromCreated()throws Exception {
         long customerId = createCustomerAndReturnId();
         String body = "{\"amount\":10.50,\"currency\":\"EUR\",\"description\":\"description2\"}";
-        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String paymentResponse = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isCreated())
@@ -69,7 +69,7 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/confirm", paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
@@ -81,7 +81,7 @@ class CustomerPaymentsIntegrationTest {
     void payment_canBeCanceled_fromCreated()throws Exception {
         long customerId = createCustomerAndReturnId();
         String body = "{\"amount\":10.50,\"currency\":\"EUR\",\"description\":\"description2\"}";
-        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String paymentResponse = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -93,7 +93,7 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/cancel", paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
     }
@@ -104,7 +104,7 @@ class CustomerPaymentsIntegrationTest {
 
         String body = "{\"amount\":12.50,\"currency\":\"EUR\",\"description\":\"description3\"}";
 
-        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String paymentResponse = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -115,12 +115,12 @@ class CustomerPaymentsIntegrationTest {
         long paymentId = Long.parseLong(paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
 
         // Confirmar
-        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/confirm", paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
         // Intentar cancelar (debe fallar)
-        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/cancel", paymentId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
                 .andExpect(jsonPath("$.error", notNullValue()));
@@ -132,7 +132,7 @@ class CustomerPaymentsIntegrationTest {
 
         String body = "{\"amount\":15.50,\"currency\":\"EUR\",\"description\":\"description4\"}";
 
-        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String paymentResponse = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -143,12 +143,12 @@ class CustomerPaymentsIntegrationTest {
         long paymentId = Long.parseLong(paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
 
         // Confirmar
-        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/cancel", paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
 
         // Intentar cancelar (debe fallar)
-        mockMvc.perform(post("/payments/{id}/confirm", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/confirm", paymentId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
                 .andExpect(jsonPath("$.error", notNullValue()));
@@ -162,7 +162,7 @@ class CustomerPaymentsIntegrationTest {
         // amount too small + currency wrong length
         String body = "{\"amount\":0,\"currency\":\"E\"}";
 
-        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -177,12 +177,12 @@ class CustomerPaymentsIntegrationTest {
 
         String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"test\"}";
 
-        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/customers/{customerId}/payments", customerId))
+        mockMvc.perform(get(API + "/customers/{customerId}/payments", customerId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.content", isA(java.util.List.class)))
@@ -197,7 +197,7 @@ class CustomerPaymentsIntegrationTest {
     void createPayment_missingCustomer_returns404() throws Exception {
         String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"test\"}";
 
-        mockMvc.perform(post("/customers/{customerId}/payments", 999999)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", 999999)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound())
@@ -212,18 +212,18 @@ class CustomerPaymentsIntegrationTest {
         String body2 = "{\"amount\":11.00,\"currency\":\"EUR\",\"description\":\"test1\"}";
         String body3 = "{\"amount\":12.00,\"currency\":\"EUR\",\"description\":\"test2\"}";
 
-        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body2))
                 .andExpect(status().isCreated());
 
 
-        String paymentResponse = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String paymentResponse = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body3))
                 .andExpect(status().isCreated())
@@ -235,11 +235,11 @@ class CustomerPaymentsIntegrationTest {
                 paymentResponse.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1")
         );
 
-        mockMvc.perform(post("/payments/{id}/cancel", paymentId))
+        mockMvc.perform(post(API + "/payments/{id}/cancel", paymentId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CANCELLED")));
 
-        mockMvc.perform(get("/customers/{customerId}/payments/summary", customerId))
+        mockMvc.perform(get(API + "/customers/{customerId}/payments/summary", customerId))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isMap())
@@ -254,13 +254,13 @@ class CustomerPaymentsIntegrationTest {
         String body = "{\"amount\":10.00,\"currency\":\"EUR\",\"description\":\"a\"}";
 
         // Crear 2 pagos
-        String p1 = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String p1 = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
-        String p2 = mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+        String p2 = mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -269,12 +269,12 @@ class CustomerPaymentsIntegrationTest {
         long id1 = Long.parseLong(p1.replaceAll(".*\"id\"\\s*:\\s*(\\d+).*", "$1"));
 
         // Confirmar solo uno
-        mockMvc.perform(post("/payments/{id}/confirm", id1))
+        mockMvc.perform(post(API + "/payments/{id}/confirm", id1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("CONFIRMED")));
 
         // Filtrar por CONFIRMED
-        mockMvc.perform(get("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(get(API + "/customers/{customerId}/payments", customerId)
                         .param("status", "CONFIRMED"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
@@ -290,13 +290,13 @@ class CustomerPaymentsIntegrationTest {
 
         // Crear 3 pagos
         for (int i = 0; i < 3; i++) {
-            mockMvc.perform(post("/customers/{customerId}/payments", customerId)
+            mockMvc.perform(post(API + "/customers/{customerId}/payments", customerId)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body))
                     .andExpect(status().isCreated());
         }
 
-        mockMvc.perform(get("/customers/{customerId}/payments", customerId)
+        mockMvc.perform(get(API + "/customers/{customerId}/payments", customerId)
                         .param("page", "0")
                         .param("size", "2")
                         .param("sort", "createdAt,desc"))

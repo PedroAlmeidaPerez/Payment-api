@@ -1,4 +1,5 @@
 package com.pedro.paymentapi.customer;
+import com.pedro.paymentapi.ApiPaths;
 import com.pedro.paymentapi.payment.Payment;
 import com.pedro.paymentapi.payment.PaymentMapper;
 import com.pedro.paymentapi.payment.PaymentService;
@@ -13,10 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @RestController
-@RequestMapping("/customers/{customerId}/payments")
+@RequestMapping(ApiPaths.V + "/customers/{customerId}/payments")
 public class CustomerPaymentsController {
 
     private final PaymentService paymentService;
