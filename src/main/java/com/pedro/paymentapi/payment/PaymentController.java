@@ -1,14 +1,12 @@
 package com.pedro.paymentapi.payment;
 
-import com.pedro.paymentapi.payment.dto.CreatePaymentRequest;
+import com.pedro.paymentapi.ApiPaths;
 import com.pedro.paymentapi.payment.dto.PaymentResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
-
 @RestController
-@RequestMapping("/payments")
+@RequestMapping(ApiPaths.V + "/payments")
 public class PaymentController {
 
     private final PaymentService service;
